@@ -25,14 +25,12 @@ import java.util.concurrent.Semaphore
 /** commit test
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
-class DroneConnection(activity : FragmentActivity, info_text : TextView) : Thread() {
+class DroneConnection(private var activity: FragmentActivity, private var info_text: TextView) : Thread() {
     private var socket: Socket? = null
     private var sem: Semaphore = Semaphore(0)
     private var Function = ""
     private var hostname = ""
     private var port = 0
-    private var info_text = info_text
-    private var activity = activity
     private var busy = false
     private var throttle_value = 0
 
