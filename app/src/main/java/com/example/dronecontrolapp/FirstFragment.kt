@@ -22,7 +22,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.Semaphore
 
 
-/**
+/** commit test
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class DroneConnection(activity : FragmentActivity, info_text : TextView) : Thread() {
