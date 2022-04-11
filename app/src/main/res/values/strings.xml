@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Drone Control App</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Configure</string>
+    <string name="previous">Back</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Set drone IP and port manually</string>
+    <string name="default_ip">192.168.4.1</string>
+    <string name="default_port">42069</string>
+    <string name ="connect_info">Press "Back" to connect to drone when done</string>
+    <string name ="connect_default">Not connected to drone</string>
+</resources>
