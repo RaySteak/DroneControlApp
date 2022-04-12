@@ -16,10 +16,12 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.fragment.findNavController
 import com.example.dronecontrolapp.databinding.FragmentFirstBinding
 import java.io.PrintWriter
+import java.lang.Math.sin
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.Semaphore
+import kotlin.math.roundToInt
 
 
 /** commit test
@@ -121,10 +123,10 @@ class DroneConnection(private var activity: FragmentActivity, private var info_t
 class FirstFragment : Fragment() {
 
     private var _binding: FragmentFirstBinding? = null
-    private lateinit var throttle_bar : SeekBar
-    private lateinit var steer_bar : SeekBar
     private lateinit var info_text : TextView
     private lateinit var drone_connection : DroneConnection
+    private lateinit var right_joystick: JoystickView
+    private lateinit var left_joystick: JoystickView
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -158,46 +160,35 @@ class FirstFragment : Fragment() {
         else
             drone_connection.connect(SecondFragment.hostname, SecondFragment.port)
 
-        throttle_bar = binding.throttle
-        throttle_bar.max = 100
-        throttle_bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean): Unit
-            {
+        left_joystick = binding.leftJoystick
+        left_joystick.isAutoReCenterButton = false
+        left_joystick.isAutoReCenterButtonHorizontal = true
+        left_joystick.isSquareJoystick = true
+
+        right_joystick = binding.rightJoystick
+        right_joystick.isAutoReCenterButton = true
+
+        left_joystick.setOnMoveListener(object : JoystickView.OnMoveListener {
+            override fun onMove(angle: Int, strength: Int) {
+                var throttle = (kotlin.math.sin(angle.toDouble() * kotlin.math.PI / 180.0) * strength.toDouble() + 100) / 2.0
+                println("THROTTLEUL ESTE " + throttle)
                 try {
                     if (!drone_connection.is_connected()) {
                         info_text.text = "Drone is not connected"
                     }
                     else {
-                        drone_connection.send_throttle(throttle_bar.progress)
+                        drone_connection.send_throttle(throttle.roundToInt())
                     }
                 }
                 catch(e : NullPointerException) {
                     info_text.text = "Drone is not connected"
                 }
             }
-
-            override fun onStartTrackingTouch(bar: SeekBar?) {
-                //
-            }
-
-            override fun onStopTrackingTouch(bar: SeekBar?) {
-                //
-            }
         })
 
-        steer_bar = binding.steer
-        steer_bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean): Unit
-            {
-
-            }
-
-            override fun onStartTrackingTouch(bar: SeekBar?) {
+        right_joystick.setOnMoveListener(object : JoystickView.OnMoveListener {
+            override fun onMove(angle: Int, strength: Int) {
                 //
-            }
-
-            override fun onStopTrackingTouch(bar: SeekBar?) {
-                bar?.progress = 50
             }
         })
 
