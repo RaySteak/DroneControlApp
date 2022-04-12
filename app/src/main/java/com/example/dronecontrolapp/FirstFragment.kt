@@ -29,31 +29,55 @@ import kotlin.math.roundToInt
  */
 class DroneConnection(private var activity: FragmentActivity, private var info_text: TextView) : Thread() {
     private var socket: Socket? = null
-    private var sem: Semaphore = Semaphore(0)
+    private var sem = Semaphore(0)
+    private val lock = Object()
     private var Function = ""
     private var hostname = ""
     private var port = 0
     private var busy = false
     private var throttle_value = 0
+    private var spin_value = 0
+    private var pitch_dir_val = 0
+    private var pitch_strength_val = 0
 
     fun connect(hostname: String, port: Int) {
-        Function = "connect"
-        this.hostname = hostname
-        this.port = port
-        sem.release()
+        synchronized(lock) {
+            Function = "connect"
+            this.hostname = hostname
+            this.port = port
+            busy = true
+            sem.release()
+        }
     }
 
     fun is_connected() : Boolean {
         return socket!!.isConnected
     }
 
-    fun send_throttle(value: Int) {
-        if (busy)
-            return
+    fun send_throttle_spin(throttle: Int, spin: Int) {
+        synchronized(lock) {
+            if (busy)
+                return
 
-        Function = "send_throttle"
-        throttle_value = value
-        sem.release()
+            Function = "send_throttle_spin"
+            throttle_value = throttle
+            spin_value = spin
+            busy = true
+            sem.release()
+        }
+    }
+
+    fun send_pitch(pitch_dir: Int, pitch_strength: Int) {
+        synchronized(lock) {
+            if (busy)
+                return
+
+            Function = "send_pitch"
+            pitch_dir_val = pitch_dir
+            pitch_strength_val = pitch_strength
+            busy = true
+            sem.release()
+        }
     }
 
     override fun run() {
@@ -66,7 +90,6 @@ class DroneConnection(private var activity: FragmentActivity, private var info_t
                 interrupt()
             }
 
-            busy = true
             when(Function) {
                 "connect" -> {
                     try {
@@ -99,13 +122,28 @@ class DroneConnection(private var activity: FragmentActivity, private var info_t
                         })
                     }
                 }
-                "send_throttle" -> {
+                "send_throttle_spin" -> {
                     try
                     {
                         if(socket!!.isConnected) {
                             var os = socket?.getOutputStream()
                             var output = PrintWriter(os)
                             output.print("Throttle: $throttle_value\n")
+                            output.print("Spin: $spin_value\n")
+                            output.flush()
+                        }
+                    }
+                    catch (e : NullPointerException) {
+                        //
+                    }
+                }
+                "send_pitch" -> {
+                    try
+                    {
+                        if(socket!!.isConnected) {
+                            var os = socket?.getOutputStream()
+                            var output = PrintWriter(os)
+                            output.print("Pitch: $pitch_dir_val, $pitch_strength_val\n")
                             output.flush()
                         }
                     }
@@ -168,29 +206,26 @@ class FirstFragment : Fragment() {
         right_joystick = binding.rightJoystick
         right_joystick.isAutoReCenterButton = true
 
-        left_joystick.setOnMoveListener(object : JoystickView.OnMoveListener {
-            override fun onMove(angle: Int, strength: Int) {
-                var throttle = (kotlin.math.sin(angle.toDouble() * kotlin.math.PI / 180.0) * strength.toDouble() + 100) / 2.0
-                println("THROTTLEUL ESTE " + throttle)
-                try {
-                    if (!drone_connection.is_connected()) {
-                        info_text.text = "Drone is not connected"
-                    }
-                    else {
-                        drone_connection.send_throttle(throttle.roundToInt())
-                    }
-                }
-                catch(e : NullPointerException) {
+        left_joystick.setOnMoveListener { angle, strength ->
+            var throttle =
+                (kotlin.math.sin(angle * kotlin.math.PI / 180.0) * strength + 100.0) / 2.0
+            println("THROTTLEUL ESTE " + throttle)
+            var spin = kotlin.math.cos(angle * kotlin.math.PI / 180.0) * strength / 2.0
+            println("SPINU ESTE " + spin)
+            try {
+                if (!drone_connection.is_connected()) {
                     info_text.text = "Drone is not connected"
+                } else {
+                    drone_connection.send_throttle_spin(throttle.coerceIn(0.0, 100.0).roundToInt(), spin.coerceIn(-50.0, 50.0).roundToInt())
                 }
+            } catch (e: NullPointerException) {
+                info_text.text = "Drone is not connected"
             }
-        })
+        }
 
-        right_joystick.setOnMoveListener(object : JoystickView.OnMoveListener {
-            override fun onMove(angle: Int, strength: Int) {
-                //
-            }
-        })
+        right_joystick.setOnMoveListener { angle, strength ->
+            //
+        }
 
         return binding.root
     }

@@ -35,7 +35,7 @@ public class JoystickView extends View
          * @param angle current angle
          * @param strength current strength
          */
-        void onMove(int angle, int strength);
+        void onMove(double angle, double strength);
     }
 
 
@@ -183,6 +183,7 @@ public class JoystickView extends View
     private int mBorderRadius;
 
 
+
     /**
      * Alpha of the border (to use when changing color dynamically)
      */
@@ -193,6 +194,7 @@ public class JoystickView extends View
      * Based on mBorderRadius but a bit smaller (minus half the stroke size of the border)
      */
     private float mBackgroundRadius;
+    public float getBackgroundRadius() { return mBackgroundRadius; }
 
 
     /**
@@ -561,9 +563,9 @@ public class JoystickView extends View
      * Process the angle following the 360° counter-clock protractor rules.
      * @return the angle of the button
      */
-    private int getAngle() {
-        int angle = (int) Math.toDegrees(Math.atan2(mCenterY - mPosY, mPosX - mCenterX));
-        return angle < 0 ? angle + 360 : angle; // make it as a regular counter-clock protractor
+    private double getAngle() {
+        double angle = Math.toDegrees(Math.atan2(mCenterY - mPosY, mPosX - mCenterX));
+        return angle < 0.0 ? angle + 360.0 : angle; // make it as a regular counter-clock protractor
     }
 
 
@@ -571,8 +573,8 @@ public class JoystickView extends View
      * Process the strength as a percentage of the distance between the center and the border.
      * @return the strength of the button
      */
-    private int getStrength() {
-        return (int) (100 * Math.sqrt((mPosX - mCenterX)
+    private double getStrength() {
+        return (100 * Math.sqrt((mPosX - mCenterX)
                 * (mPosX - mCenterX) + (mPosY - mCenterY)
                 * (mPosY - mCenterY)) / mBorderRadius);
     }
