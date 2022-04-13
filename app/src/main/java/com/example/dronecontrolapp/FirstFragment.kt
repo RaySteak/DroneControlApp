@@ -1,16 +1,25 @@
 package com.example.dronecontrolapp
 
 import android.content.Context
+import android.content.Context.SENSOR_SERVICE
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.graphics.rotationMatrix
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.fragment.findNavController
@@ -165,6 +174,10 @@ class FirstFragment : Fragment() {
     private lateinit var drone_connection : DroneConnection
     private lateinit var right_joystick: JoystickView
     private lateinit var left_joystick: JoystickView
+    private lateinit var sensorManager: SensorManager
+    private var sensor: Sensor? = null
+    private lateinit var mode_button: Button
+    private var gyro_mode = false
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -204,7 +217,52 @@ class FirstFragment : Fragment() {
         left_joystick.isSquareJoystick = true
 
         right_joystick = binding.rightJoystick
-        right_joystick.isAutoReCenterButton = true
+        right_joystick.isAutoReCenterButton = false
+
+        sensorManager = requireContext().getSystemService(SENSOR_SERVICE) as SensorManager
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+        val reference_measurement = FloatArray(3)
+        var first_measurement = true
+
+        mode_button = binding.modeButton
+        mode_button.text = "Joystick"
+
+        mode_button.setOnClickListener {
+            if(mode_button.text == "Joystick") {
+                mode_button.text = "Gyro"
+            }
+            else {
+                mode_button.text = "Joystick"
+            }
+            gyro_mode = !gyro_mode;
+        }
+
+        sensor.also { rot ->
+            sensorManager.registerListener(object : SensorEventListener {
+                override fun onSensorChanged(sensor: SensorEvent?) {
+                    if(!gyro_mode)
+                        return
+                    if(first_measurement) {
+                        reference_measurement[0] = sensor!!.values[0]
+                        reference_measurement[1] = sensor!!.values[1]
+                        reference_measurement[2] = sensor!!.values[2]
+                        first_measurement = false
+                    }
+                    var ox = sensor!!.values[0]
+                    var oy = sensor!!.values[1]
+                    var ox_int = (5 * (ox - reference_measurement[0]) * 100.0).toInt()
+                    var oy_int = (-5 * (oy - reference_measurement[1]) * 100.0).toInt()
+                    //println("VALORILE SUNT " + ox_int + ", " + oy_int)
+                    right_joystick.setButtonPosition(ox_int, oy_int)
+                    right_joystick.invalidate()
+                }
+
+                override fun onAccuracyChanged(sensor: Sensor?, acc: Int) {
+                    //
+                }
+
+            } , rot, SensorManager.SENSOR_DELAY_GAME)
+        }
 
         left_joystick.setOnMoveListener { angle, strength ->
             var throttle =
@@ -224,7 +282,16 @@ class FirstFragment : Fragment() {
         }
 
         right_joystick.setOnMoveListener { angle, strength ->
-            //
+            println("PITCHU ESTE " + angle + ", " + strength)
+            try {
+                if(!drone_connection.is_connected()) {
+                    info_text.text = "Drone is not connected"
+                } else {
+                    drone_connection.send_pitch(angle.toInt(), strength.toInt())
+                }
+            } catch (e: NullPointerException) {
+                info_text.text = "Drone is not connected"
+            }
         }
 
         return binding.root

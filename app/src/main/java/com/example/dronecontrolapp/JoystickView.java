@@ -588,6 +588,20 @@ public class JoystickView extends View
         mPosY = mCenterY;
     }
 
+    public void setButtonPosition(int posX, int posY) {
+        mPosX = posX + mCenterX;
+        mPosY = posY + mCenterY;
+
+        double abs = Math.sqrt((mPosX - mCenterX) * (mPosX - mCenterX)
+                + (mPosY - mCenterY) * (mPosY - mCenterY));
+
+        if (abs > mBorderRadius || (mButtonStickToBorder && abs != 0)) {
+            mPosX = (int) ((mPosX - mCenterX) * mBorderRadius / abs + mCenterX);
+            mPosY = (int) ((mPosY - mCenterY) * mBorderRadius / abs + mCenterY);
+        }
+
+    }
+
     public void resetButtonPositionHorizontal() {
         mPosX = mCenterX;
     }
