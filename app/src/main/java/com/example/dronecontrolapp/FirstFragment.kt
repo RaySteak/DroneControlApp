@@ -2,6 +2,7 @@ package com.example.dronecontrolapp
 
 import android.content.Context
 import android.content.Context.SENSOR_SERVICE
+import android.graphics.Matrix
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -20,6 +21,7 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.graphics.rotationMatrix
+import androidx.core.graphics.values
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.fragment.findNavController
@@ -183,6 +185,16 @@ class FirstFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
+    private fun mul(a : FloatArray, b : FloatArray, c : FloatArray) {
+        for (i in 0..2) {
+            for (j in 0..2) {
+                c[3 * i + j] = 0F
+                for (k in 0..2)
+                    c[3 * i + j] += a[3 * i + k] * b[3 * k + j]
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -217,11 +229,11 @@ class FirstFragment : Fragment() {
         left_joystick.isSquareJoystick = true
 
         right_joystick = binding.rightJoystick
-        right_joystick.isAutoReCenterButton = false
+        right_joystick.isAutoReCenterButton = true
 
         sensorManager = requireContext().getSystemService(SENSOR_SERVICE) as SensorManager
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
-        val reference_measurement = FloatArray(3)
+        val reference_measurement = FloatArray(9)
         var first_measurement = true
 
         mode_button = binding.modeButton
@@ -230,9 +242,13 @@ class FirstFragment : Fragment() {
         mode_button.setOnClickListener {
             if(mode_button.text == "Joystick") {
                 mode_button.text = "Gyro"
+                right_joystick.isAutoReCenterButton = false
             }
             else {
                 mode_button.text = "Joystick"
+                right_joystick.isAutoReCenterButton = true
+                right_joystick.setButtonPosition(0, 0)
+                right_joystick.invalidate()
             }
             gyro_mode = !gyro_mode;
         }
@@ -240,20 +256,56 @@ class FirstFragment : Fragment() {
         sensor.also { rot ->
             sensorManager.registerListener(object : SensorEventListener {
                 override fun onSensorChanged(sensor: SensorEvent?) {
-                    if(!gyro_mode)
+                    if (!gyro_mode)
                         return
-                    if(first_measurement) {
-                        reference_measurement[0] = sensor!!.values[0]
-                        reference_measurement[1] = sensor!!.values[1]
-                        reference_measurement[2] = sensor!!.values[2]
+                    if (first_measurement) {
+                        SensorManager.getRotationMatrixFromVector(
+                            reference_measurement,
+                            sensor!!.values
+                        )
                         first_measurement = false
                     }
-                    var ox = sensor!!.values[0]
-                    var oy = sensor!!.values[1]
-                    var ox_int = (5 * (ox - reference_measurement[0]) * 100.0).toInt()
-                    var oy_int = (-5 * (oy - reference_measurement[1]) * 100.0).toInt()
-                    //println("VALORILE SUNT " + ox_int + ", " + oy_int)
-                    right_joystick.setButtonPosition(ox_int, oy_int)
+                    val actual_measurement = FloatArray(3)
+                    var ref_matrix = Matrix()
+                    ref_matrix.setValues(reference_measurement)
+                    var ref_inverse_matrix = Matrix()
+                    ref_matrix.invert(ref_inverse_matrix)
+
+                    val cur_measurement = FloatArray(9)
+                    SensorManager.getRotationMatrixFromVector(
+                        cur_measurement,
+                        sensor!!.values
+                    )
+
+                    val oz_measurement = FloatArray(9)
+                    for (i in 0..8)
+                        oz_measurement[i] = cur_measurement[i]
+                    for (i in 0..1) {
+                        oz_measurement[3 * 2 + i] = 0F
+                        oz_measurement[3 * i + 2] = 0F
+                    }
+                    oz_measurement[3 * 2 + 2] = 1F
+                    var oz_matrix = Matrix()
+                    oz_matrix.setValues(oz_measurement)
+                    var oz_inverse_matrix = Matrix()
+                    oz_matrix.invert(oz_inverse_matrix)
+
+                    val rot = FloatArray(9)
+                    mul(cur_measurement, ref_inverse_matrix.values(), rot)
+                    val final_rot = FloatArray(9)
+                    mul(oz_inverse_matrix.values(), rot, final_rot)
+
+                    val unit_vector = FloatArray(3)
+                    unit_vector[0] = 0F
+                    unit_vector[1] = 0F
+                    unit_vector[2] = 1F
+
+                    for (i in 0..2) {
+                        actual_measurement[i] = 0F
+                        for (j in 0..2)
+                            actual_measurement[i] += unit_vector[j] * final_rot[3 * i + j]
+                    }
+                    right_joystick.setButtonPosition((-actual_measurement[1] * 200).toInt(), (-actual_measurement[0] * 200).toInt())
                     right_joystick.invalidate()
                 }
 
@@ -261,7 +313,7 @@ class FirstFragment : Fragment() {
                     //
                 }
 
-            } , rot, SensorManager.SENSOR_DELAY_GAME)
+            }, rot, SensorManager.SENSOR_DELAY_GAME)
         }
 
         left_joystick.setOnMoveListener { angle, strength ->
@@ -280,6 +332,7 @@ class FirstFragment : Fragment() {
                 info_text.text = "Drone is not connected"
             }
         }
+
 
         right_joystick.setOnMoveListener { angle, strength ->
             println("PITCHU ESTE " + angle + ", " + strength)

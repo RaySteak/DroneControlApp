@@ -283,6 +283,8 @@ public class JoystickView extends View
             mFixedCenter = styledAttributes.getBoolean(R.styleable.JoystickView_JV_fixedCenter, DEFAULT_FIXED_CENTER);
             mAutoReCenterButton = styledAttributes.getBoolean(R.styleable.JoystickView_JV_autoReCenterButton, DEFAULT_AUTO_RECENTER_BUTTON);
             mButtonStickToBorder = styledAttributes.getBoolean(R.styleable.JoystickView_JV_buttonStickToBorder, DEFAULT_BUTTON_STICK_TO_BORDER);
+            mPosX = styledAttributes.getInteger(R.styleable.JoystickView_JV_PosX, 0);
+            mPosY = styledAttributes.getInteger(R.styleable.JoystickView_JV_PosY, 0);
             buttonDrawable = styledAttributes.getDrawable(R.styleable.JoystickView_JV_buttonImage);
             mEnabled = styledAttributes.getBoolean(R.styleable.JoystickView_JV_enabled, true);
             mButtonSizeRatio = styledAttributes.getFraction(R.styleable.JoystickView_JV_buttonSizeRatio, 1, 1, 0.25f);
@@ -336,8 +338,10 @@ public class JoystickView extends View
 
     private void initPosition() {
         // get the center of view to position circle
-        mFixedCenterX = mCenterX = mPosX = getWidth() / 2;
-        mFixedCenterY = mCenterY = mPosY = getWidth() / 2;
+        mPosX += getWidth() / 2;
+        mPosY = mPosY + getWidth() / 2;
+        mFixedCenterX = mCenterX = getWidth() / 2;
+        mFixedCenterY = mCenterY = getWidth() / 2;
     }
 
 
@@ -591,6 +595,7 @@ public class JoystickView extends View
     public void setButtonPosition(int posX, int posY) {
         mPosX = posX + mCenterX;
         mPosY = posY + mCenterY;
+        invalidate();
 
         double abs = Math.sqrt((mPosX - mCenterX) * (mPosX - mCenterX)
                 + (mPosY - mCenterY) * (mPosY - mCenterY));
@@ -599,7 +604,6 @@ public class JoystickView extends View
             mPosX = (int) ((mPosX - mCenterX) * mBorderRadius / abs + mCenterX);
             mPosY = (int) ((mPosY - mCenterY) * mBorderRadius / abs + mCenterY);
         }
-
     }
 
     public void resetButtonPositionHorizontal() {
