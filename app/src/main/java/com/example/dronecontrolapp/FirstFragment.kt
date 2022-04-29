@@ -32,6 +32,7 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.Semaphore
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 
@@ -243,6 +244,7 @@ class FirstFragment : Fragment() {
             if(mode_button.text == "Joystick") {
                 mode_button.text = "Gyro"
                 right_joystick.isAutoReCenterButton = false
+                first_measurement = true
             }
             else {
                 mode_button.text = "Joystick"
@@ -326,6 +328,10 @@ class FirstFragment : Fragment() {
                 if (!drone_connection.is_connected()) {
                     info_text.text = "Drone is not connected"
                 } else {
+                    if(throttle <= 5.0)
+                        throttle = 0.0
+                    if(spin.absoluteValue <= 10.0)
+                        spin = 0.0
                     drone_connection.send_throttle_spin(throttle.coerceIn(0.0, 100.0).roundToInt(), spin.coerceIn(-50.0, 50.0).roundToInt())
                 }
             } catch (e: NullPointerException) {
