@@ -32,23 +32,23 @@
 
     <com.example.dronecontrolapp.JoystickView
         android:id="@+id/rightJoystick"
-        android:layout_width="192dp"
-        android:layout_height="192dp"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
         app:JV_backgroundColor="#00BCD4"
         app:JV_borderColor="#3F51B5"
         app:JV_buttonColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.674"
+        app:layout_constraintHorizontal_bias="0.576"
         app:layout_constraintStart_toEndOf="@+id/leftJoystick"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.634" />
+        app:layout_constraintVertical_bias="0.633" />
 
     <com.example.dronecontrolapp.JoystickView
         android:id="@+id/leftJoystick"
-        android:layout_width="192dp"
-        android:layout_height="192dp"
-        android:layout_marginStart="104dp"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_marginStart="68dp"
         app:JV_PosX="0"
         app:JV_PosY="200"
         app:JV_backgroundColor="#00BCD4"
@@ -56,7 +56,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.634" />
+        app:layout_constraintVertical_bias="0.633" />
 
     <Button
         android:id="@+id/modeButton"

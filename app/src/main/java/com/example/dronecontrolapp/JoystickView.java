@@ -58,7 +58,7 @@ public class JoystickView extends View
     /**
      * Default refresh rate as a time in milliseconds to send move values through callback
      */
-    private static final int DEFAULT_LOOP_INTERVAL = 50; // in milliseconds
+    public static final int DEFAULT_LOOP_INTERVAL = 50; // in milliseconds
 
     /**
      * Used to allow a slight move without cancelling MultipleLongPress
@@ -567,7 +567,7 @@ public class JoystickView extends View
      * Process the angle following the 360° counter-clock protractor rules.
      * @return the angle of the button
      */
-    private double getAngle() {
+    public double getAngle() {
         double angle = Math.toDegrees(Math.atan2(mCenterY - mPosY, mPosX - mCenterX));
         return angle < 0.0 ? angle + 360.0 : angle; // make it as a regular counter-clock protractor
     }
@@ -577,7 +577,7 @@ public class JoystickView extends View
      * Process the strength as a percentage of the distance between the center and the border.
      * @return the strength of the button
      */
-    private double getStrength() {
+    public double getStrength() {
         return (100 * Math.sqrt((mPosX - mCenterX)
                 * (mPosX - mCenterX) + (mPosY - mCenterY)
                 * (mPosY - mCenterY)) / mBorderRadius);

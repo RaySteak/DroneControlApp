@@ -11,10 +11,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
@@ -196,6 +193,19 @@ class FirstFragment : Fragment() {
         }
     }
 
+    private fun handle_tilt(angle : Double, strength : Double) {
+        println("PITCHU ESTE " + angle + ", " + strength)
+        try {
+            if(!drone_connection.is_connected()) {
+                info_text.text = "Drone is not connected"
+            } else {
+                drone_connection.send_pitch(angle.toInt(), strength.toInt())
+            }
+        } catch (e: NullPointerException) {
+            info_text.text = "Drone is not connected"
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -255,6 +265,7 @@ class FirstFragment : Fragment() {
             gyro_mode = !gyro_mode;
         }
 
+        var last_changed = 0L
         sensor.also { rot ->
             sensorManager.registerListener(object : SensorEventListener {
                 override fun onSensorChanged(sensor: SensorEvent?) {
@@ -309,6 +320,11 @@ class FirstFragment : Fragment() {
                     }
                     right_joystick.setButtonPosition((-actual_measurement[1] * 200).toInt(), (-actual_measurement[0] * 200).toInt())
                     right_joystick.invalidate()
+                    var cur_time = System.currentTimeMillis()
+                    if(cur_time - last_changed >= JoystickView.DEFAULT_LOOP_INTERVAL) {
+                        handle_tilt(right_joystick.angle, right_joystick.strength)
+                        last_changed = cur_time
+                    }
                 }
 
                 override fun onAccuracyChanged(sensor: Sensor?, acc: Int) {
@@ -341,16 +357,7 @@ class FirstFragment : Fragment() {
 
 
         right_joystick.setOnMoveListener { angle, strength ->
-            println("PITCHU ESTE " + angle + ", " + strength)
-            try {
-                if(!drone_connection.is_connected()) {
-                    info_text.text = "Drone is not connected"
-                } else {
-                    drone_connection.send_pitch(angle.toInt(), strength.toInt())
-                }
-            } catch (e: NullPointerException) {
-                info_text.text = "Drone is not connected"
-            }
+            handle_tilt(angle, strength)
         }
 
         return binding.root
